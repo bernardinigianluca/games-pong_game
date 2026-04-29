@@ -607,17 +607,40 @@ export default function PongGame() {
       ? 0
       : Math.min(1, masterVolumeRef.current * crowdVolumeRef.current * 0.35);
     bgMusicRef.current = audio;
+
+    let resumeOnFirstClick = null;
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
-        const resume = () => { audio.play().catch(() => {}); document.removeEventListener('click', resume); };
-        document.addEventListener('click', resume, { once: true });
+        resumeOnFirstClick = () => {
+          audio.play().catch(() => {});
+          document.removeEventListener('click', resumeOnFirstClick);
+        };
+        document.addEventListener('click', resumeOnFirstClick, { once: true });
       });
     }
+
     return () => {
+      if (resumeOnFirstClick) {
+        document.removeEventListener('click', resumeOnFirstClick);
+      }
       audio.pause();
       audio.src = '';
       bgMusicRef.current = null;
+    };
+  }, []);
+
+  // Sync bg music volume / mute in real time
+  useEffect(() => {
+    if (!bgMusicRef.current) return;
+    bgMusicRef.current.volume = isMuted
+      ? 0
+      : Math.min(1, masterVolume * crowdVolume * 0.35);
+  }, [isMuted, masterVolume, crowdVolume]);
+
+  // Cleanup game timers/refs only on component unmount.
+  useEffect(() => {
+    return () => {
       if (serveTimeoutRef.current) {
         clearTimeout(serveTimeoutRef.current);
       }
@@ -638,15 +661,7 @@ export default function PongGame() {
       }
       aiServeDueTimeRef.current = null;
     };
-  }); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Sync bg music volume / mute in real time
-  useEffect(() => {
-    if (!bgMusicRef.current) return;
-    bgMusicRef.current.volume = isMuted
-      ? 0
-      : Math.min(1, masterVolume * crowdVolume * 0.35);
-  }, [isMuted, masterVolume, crowdVolume]);
+  }, []);
 
   useEffect(() => {
     const isServePhase = waitingForPlayerServe || waitingForAiServe;
