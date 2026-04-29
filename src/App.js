@@ -28,30 +28,14 @@ const DIFFICULTY_PRESETS = {
   },
 };
 
-const BACKGROUND_TRACKS = [
-  { file: 'Art Flower - Art Flower - Crispy z3ta.mp3', label: 'Art Flower - Crispy z3ta' },
-  { file: 'Drake Stafford - 432 Hz.mp3', label: 'Drake Stafford - 432 Hz' },
-  { file: 'HoliznaCC0 - Back In The 80s.mp3', label: 'HoliznaCC0 - Back In The 80s' },
-  { file: 'HoliznaCC0 - Dear Mr Super Computer.mp3', label: 'HoliznaCC0 - Dear Mr Super Computer' },
-  { file: 'HoliznaCC0 - Drama.mp3', label: 'HoliznaCC0 - Drama' },
-  { file: 'HoliznaCC0 - Good Vibes.mp3', label: 'HoliznaCC0 - Good Vibes' },
-  { file: 'HoliznaCC0 - How Can Things Be.mp3', label: 'HoliznaCC0 - How Can Things Be' },
-  { file: 'HoliznaCC0 - Make Funk.mp3', label: 'HoliznaCC0 - Make Funk' },
-  { file: 'HoliznaCC0 - Nocturnal.mp3', label: 'HoliznaCC0 - Nocturnal' },
-  { file: 'Wax Lyricist - Apoplēssein.mp3', label: 'Wax Lyricist - Apoplessein' },
-];
+const pickRandomTrackFromList = (tracks, currentTrackFile = null) => {
+  if (!Array.isArray(tracks) || tracks.length === 0) return '';
+  if (tracks.length === 1) return tracks[0].file;
 
-const pickRandomBackgroundTrack = () => {
-  const randomIndex = Math.floor(Math.random() * BACKGROUND_TRACKS.length);
-  return BACKGROUND_TRACKS[randomIndex].file;
-};
-
-const pickDifferentBackgroundTrack = (currentTrackFile) => {
-  if (BACKGROUND_TRACKS.length <= 1) return currentTrackFile;
   let nextTrackFile = currentTrackFile;
   while (nextTrackFile === currentTrackFile) {
-    const randomIndex = Math.floor(Math.random() * BACKGROUND_TRACKS.length);
-    nextTrackFile = BACKGROUND_TRACKS[randomIndex].file;
+    const randomIndex = Math.floor(Math.random() * tracks.length);
+    nextTrackFile = tracks[randomIndex].file;
   }
   return nextTrackFile;
 };
@@ -116,7 +100,8 @@ export default function PongGame() {
   const [masterVolume, setMasterVolume] = useState(0.8);
   const [effectsVolume, setEffectsVolume] = useState(0.9);
   const [crowdVolume, setCrowdVolume] = useState(0.85);
-  const [selectedTrackFile, setSelectedTrackFile] = useState(() => pickRandomBackgroundTrack());
+  const [backgroundTracks, setBackgroundTracks] = useState([]);
+  const [selectedTrackFile, setSelectedTrackFile] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   const [gameActive, setGameActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -155,8 +140,9 @@ export default function PongGame() {
   const servicePulseTimeoutRef = useRef(null);
   const scorePopTimeoutRef = useRef(null);
   const bgMusicRef = useRef(null);
+  const selectedTrackRef = useRef(selectedTrackFile);
   const selectedTrackLabel =
-    BACKGROUND_TRACKS.find((track) => track.file === selectedTrackFile)?.label || selectedTrackFile;
+    backgroundTracks.find((track) => track.file === selectedTrackFile)?.label || selectedTrackFile;
   const aiSettings = DIFFICULTY_PRESETS[difficulty];
   const {
     reactionMs,
@@ -181,9 +167,51 @@ export default function PongGame() {
     isMutedRef.current = isMuted;
   }, [masterVolume, effectsVolume, crowdVolume, isMuted]);
 
-  const handlePickRandomTrack = useCallback(() => {
-    setSelectedTrackFile((prev) => pickDifferentBackgroundTrack(prev));
+  useEffect(() => {
+    selectedTrackRef.current = selectedTrackFile;
+  }, [selectedTrackFile]);
+
+  const refreshBackgroundTracks = useCallback(async () => {
+    try {
+      const response = await fetch(`/audio/manifest.json?ts=${Date.now()}`);
+      if (!response.ok) return;
+      const tracks = await response.json();
+      if (!Array.isArray(tracks)) return;
+
+      const normalizedTracks = tracks
+        .filter((track) => track && typeof track.file === 'string')
+        .map((track) => ({
+          file: track.file,
+          label: typeof track.label === 'string' && track.label.trim()
+            ? track.label
+            : track.file.replace(/\.[^.]+$/, ''),
+        }));
+
+      setBackgroundTracks(normalizedTracks);
+      setSelectedTrackFile((prev) => {
+        if (prev && normalizedTracks.some((track) => track.file === prev)) {
+          return prev;
+        }
+        return pickRandomTrackFromList(normalizedTracks);
+      });
+    } catch (e) {
+      console.log('Manifest audio non disponibile');
+    }
   }, []);
+
+  const handlePickRandomTrack = useCallback(() => {
+    setSelectedTrackFile((prev) => pickRandomTrackFromList(backgroundTracks, prev));
+  }, [backgroundTracks]);
+
+  useEffect(() => {
+    refreshBackgroundTracks();
+  }, [refreshBackgroundTracks]);
+
+  useEffect(() => {
+    if (isSettingsOpen) {
+      refreshBackgroundTracks();
+    }
+  }, [isSettingsOpen, refreshBackgroundTracks]);
 
   const playSound = useCallback((
     frequency,
@@ -636,6 +664,7 @@ export default function PongGame() {
 
   // Background MP3 music (432 Hz)
   useEffect(() => {
+    if (!selectedTrackFile) return undefined;
     const trackUrl = `/audio/${encodeURIComponent(selectedTrackFile)}`;
     const audio = new Audio(trackUrl);
     audio.loop = true;
@@ -1271,6 +1300,7 @@ export default function PongGame() {
     setIsServicePulse(false);
     setScorePopSide(null);
     setSpeedMultiplier(1);
+    refreshBackgroundTracks();
     aiDecisionTimeRef.current = 0;
     aiTargetYOffsetRef.current = 0;
     aiTargetXOffsetRef.current = 0;
@@ -1585,15 +1615,20 @@ export default function PongGame() {
                   value={selectedTrackFile}
                   onChange={(e) => setSelectedTrackFile(e.target.value)}
                   className="difficulty-select"
+                  disabled={backgroundTracks.length === 0}
                 >
-                  {BACKGROUND_TRACKS.map((track) => (
+                  {backgroundTracks.map((track) => (
                     <option key={track.file} value={track.file}>
                       {track.label}
                     </option>
                   ))}
                 </select>
 
-                <button onClick={handlePickRandomTrack} className="audio-toggle-btn">
+                <button
+                  onClick={handlePickRandomTrack}
+                  className="audio-toggle-btn"
+                  disabled={backgroundTracks.length <= 1}
+                >
                   Traccia casuale
                 </button>
               </div>
