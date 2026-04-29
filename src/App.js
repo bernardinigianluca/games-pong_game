@@ -28,6 +28,24 @@ const DIFFICULTY_PRESETS = {
   },
 };
 
+const BACKGROUND_TRACKS = [
+  { file: 'Art Flower - Art Flower - Crispy z3ta.mp3', label: 'Art Flower - Crispy z3ta' },
+  { file: 'Drake Stafford - 432 Hz.mp3', label: 'Drake Stafford - 432 Hz' },
+  { file: 'HoliznaCC0 - Back In The 80s.mp3', label: 'HoliznaCC0 - Back In The 80s' },
+  { file: 'HoliznaCC0 - Dear Mr Super Computer.mp3', label: 'HoliznaCC0 - Dear Mr Super Computer' },
+  { file: 'HoliznaCC0 - Drama.mp3', label: 'HoliznaCC0 - Drama' },
+  { file: 'HoliznaCC0 - Good Vibes.mp3', label: 'HoliznaCC0 - Good Vibes' },
+  { file: 'HoliznaCC0 - How Can Things Be.mp3', label: 'HoliznaCC0 - How Can Things Be' },
+  { file: 'HoliznaCC0 - Make Funk.mp3', label: 'HoliznaCC0 - Make Funk' },
+  { file: 'HoliznaCC0 - Nocturnal.mp3', label: 'HoliznaCC0 - Nocturnal' },
+  { file: 'Wax Lyricist - Apoplēssein.mp3', label: 'Wax Lyricist - Apoplessein' },
+];
+
+const pickRandomBackgroundTrack = () => {
+  const randomIndex = Math.floor(Math.random() * BACKGROUND_TRACKS.length);
+  return BACKGROUND_TRACKS[randomIndex].file;
+};
+
 export default function PongGame() {
   const ballSize = 10;
   const paddleWidth = 10;
@@ -88,6 +106,7 @@ export default function PongGame() {
   const [masterVolume, setMasterVolume] = useState(0.8);
   const [effectsVolume, setEffectsVolume] = useState(0.9);
   const [crowdVolume, setCrowdVolume] = useState(0.85);
+  const [selectedTrackFile, setSelectedTrackFile] = useState(() => pickRandomBackgroundTrack());
   const [isMuted, setIsMuted] = useState(false);
   const [gameActive, setGameActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -126,6 +145,8 @@ export default function PongGame() {
   const servicePulseTimeoutRef = useRef(null);
   const scorePopTimeoutRef = useRef(null);
   const bgMusicRef = useRef(null);
+  const selectedTrackLabel =
+    BACKGROUND_TRACKS.find((track) => track.file === selectedTrackFile)?.label || selectedTrackFile;
   const aiSettings = DIFFICULTY_PRESETS[difficulty];
   const {
     reactionMs,
@@ -601,7 +622,8 @@ export default function PongGame() {
 
   // Background MP3 music (432 Hz)
   useEffect(() => {
-    const audio = new Audio('/audio/Drake Stafford - 432 Hz.mp3');
+    const trackUrl = `/audio/${encodeURIComponent(selectedTrackFile)}`;
+    const audio = new Audio(trackUrl);
     audio.loop = true;
     audio.volume = isMutedRef.current
       ? 0
@@ -628,7 +650,7 @@ export default function PongGame() {
       audio.src = '';
       bgMusicRef.current = null;
     };
-  }, []);
+  }, [selectedTrackFile]);
 
   // Sync bg music volume / mute in real time
   useEffect(() => {
@@ -1542,6 +1564,20 @@ export default function PongGame() {
                   onChange={(e) => setCrowdVolume(parseFloat(e.target.value))}
                   className="speed-slider volume-slider"
                 />
+
+                <label htmlFor="bg-track">Musica di Sottofondo</label>
+                <select
+                  id="bg-track"
+                  value={selectedTrackFile}
+                  onChange={(e) => setSelectedTrackFile(e.target.value)}
+                  className="difficulty-select"
+                >
+                  {BACKGROUND_TRACKS.map((track) => (
+                    <option key={track.file} value={track.file}>
+                      {track.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -1553,6 +1589,7 @@ export default function PongGame() {
               <p>⚡ Trail servizio: rosso per ace, verde per spin</p>
               <p>🔊 Audio eventi: countdown, pubblico, vittoria, punto perso</p>
               <p>🎚️ Mixer audio: generale, effetti e pubblico</p>
+              <p>🎵 Brano corrente: {selectedTrackLabel}</p>
               <p>📊 Usa il cursore per controllare la velocità della pallina</p>
             </div>
 
