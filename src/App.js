@@ -115,6 +115,16 @@ export default function PongGame() {
   const gameHeight = Math.max(minResponsiveHeight, viewportSize.height - uiVerticalReserve);
   const singlesTopY = gameHeight * 0.2;
   const singlesBottomY = gameHeight * 0.8;
+  const singlesCenterY = (singlesTopY + singlesBottomY) / 2;
+  const serveBandHalfHeight = gameHeight * 0.08;
+  const servePaddleMinY = Math.max(
+    singlesTopY,
+    singlesCenterY - serveBandHalfHeight - paddleHeight / 2
+  );
+  const servePaddleMaxY = Math.min(
+    singlesBottomY - paddleHeight,
+    singlesCenterY + serveBandHalfHeight - paddleHeight / 2
+  );
   const playerAreaMinX = gameWidth / 2 + 10;
   const playerAreaMaxX = gameWidth - paddleWidth - sideMargin;
   const aiAreaMinX = sideMargin;
@@ -991,14 +1001,18 @@ export default function PongGame() {
       }
 
       if (waitingForPlayerServe) {
+        const servePlayerPaddleY = Math.max(
+          servePaddleMinY,
+          Math.min(servePaddleMaxY, nextPlayerPaddleY)
+        );
         const attachedBallX = nextPlayerPaddleX - ballSize;
-        const attachedBallY = nextPlayerPaddleY + paddleHeight / 2 - ballSize / 2;
+        const attachedBallY = servePlayerPaddleY + paddleHeight / 2 - ballSize / 2;
         const normalServePressed = keysPressed.current[' '] || keysPressed.current['Enter'];
         const spinServePressed = keysPressed.current['s'] || keysPressed.current['S'];
         const aceServePressed = keysPressed.current['a'] || keysPressed.current['A'];
 
         setPlayerPaddleX(nextPlayerPaddleX);
-        setPlayerPaddleY(nextPlayerPaddleY);
+        setPlayerPaddleY(servePlayerPaddleY);
         setBallX(attachedBallX);
         setBallY(attachedBallY);
         setBallVelocityX(0);
@@ -1042,11 +1056,16 @@ export default function PongGame() {
       }
 
       if (waitingForAiServe) {
+        const serveAiPaddleY = Math.max(
+          servePaddleMinY,
+          Math.min(servePaddleMaxY, aiPaddleY)
+        );
         const attachedBallX = aiPaddleX + paddleWidth;
-        const attachedBallY = aiPaddleY + paddleHeight / 2 - ballSize / 2;
+        const attachedBallY = serveAiPaddleY + paddleHeight / 2 - ballSize / 2;
 
         setPlayerPaddleX(nextPlayerPaddleX);
         setPlayerPaddleY(nextPlayerPaddleY);
+        setAiPaddleY(serveAiPaddleY);
         setBallX(attachedBallX);
         setBallY(attachedBallY);
         setBallVelocityX(0);
@@ -1346,6 +1365,8 @@ export default function PongGame() {
     gameHeight,
     singlesTopY,
     singlesBottomY,
+    servePaddleMinY,
+    servePaddleMaxY,
     aiAreaMinX,
     aiAreaMaxX,
     playerAreaMinX,
