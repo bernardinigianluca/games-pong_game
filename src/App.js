@@ -102,6 +102,7 @@ export default function PongGame() {
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
   const [showWinCelebration, setShowWinCelebration] = useState(false);
+  const [showLoseCelebration, setShowLoseCelebration] = useState(false);
   const [pointFlashSide, setPointFlashSide] = useState(null);
   const [isServicePulse, setIsServicePulse] = useState(false);
   const [scorePopSide, setScorePopSide] = useState(null);
@@ -242,6 +243,53 @@ export default function PongGame() {
     playCrowdCheer();
     setTimeout(() => playLosePointCrowd(), 260);
   }, [playCrowdCheer, playLosePointCrowd]);
+
+  const playSadTrombone = useCallback(() => {
+    const audioContext = audioContextRef.current;
+    if (!audioContext) return;
+    const vol = isMutedRef.current ? 0 : Math.min(1, masterVolumeRef.current * effectsVolumeRef.current * 1.1);
+    if (vol <= 0) return;
+    if (audioContext.state === 'suspended') audioContext.resume();
+
+    // Classic sad trombone: wah-wah-wah-waaaah (descending glide)
+    const segments = [
+      { startFreq: 466, endFreq: 370, startT: 0,    dur: 0.38 },
+      { startFreq: 415, endFreq: 330, startT: 0.40, dur: 0.38 },
+      { startFreq: 370, endFreq: 294, startT: 0.80, dur: 0.38 },
+      { startFreq: 330, endFreq: 196, startT: 1.20, dur: 0.95 }, // long waaaah
+    ];
+
+    segments.forEach(({ startFreq, endFreq, startT, dur }) => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      // Add a slight vibrato via a second osc
+      const vibrato = audioContext.createOscillator();
+      const vibratoGain = audioContext.createGain();
+      vibrato.frequency.value = 5.5;
+      vibrato.type = 'sine';
+      vibratoGain.gain.value = 6;
+      vibrato.connect(vibratoGain);
+      vibratoGain.connect(osc.frequency);
+
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.type = 'sawtooth';
+
+      const start = audioContext.currentTime + startT;
+      osc.frequency.setValueAtTime(startFreq, start);
+      osc.frequency.linearRampToValueAtTime(endFreq, start + dur);
+
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(vol * 0.55, start + 0.04);
+      gain.gain.setValueAtTime(vol * 0.55, start + dur - 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur + 0.08);
+
+      vibrato.start(start);
+      osc.start(start);
+      vibrato.stop(start + dur + 0.1);
+      osc.stop(start + dur + 0.1);
+    });
+  }, [audioContextRef, isMutedRef, masterVolumeRef, effectsVolumeRef]);
 
   const playWinFanfare = useCallback(() => {
     const audioContext = audioContextRef.current;
@@ -961,6 +1009,8 @@ export default function PongGame() {
           setGameActive(false);
           setGameOver(true);
           setWinner('AI');
+          setShowLoseCelebration(true);
+          playSadTrombone();
           playLosePointCrowd();
         } else {
           if (serveTimeoutRef.current) {
@@ -1109,6 +1159,7 @@ export default function PongGame() {
     playCrowdCheer,
     playCrowdRallyPeak,
     playLosePointCrowd,
+    playSadTrombone,
     playWinFanfare,
     reactionMs,
     reactionVarianceMs,
@@ -1151,6 +1202,7 @@ export default function PongGame() {
     setGameOver(false);
     setWinner(null);
     setShowWinCelebration(false);
+    setShowLoseCelebration(false);
     setPointFlashSide(null);
     setIsServicePulse(false);
     setScorePopSide(null);
@@ -1277,6 +1329,17 @@ export default function PongGame() {
             {countdownValue !== null && (
               <div className="countdown-overlay">
                 <span className="countdown-number">{countdownValue}</span>
+              </div>
+            )}
+
+            {showLoseCelebration && (
+              <div className="lose-celebration-overlay" onClick={() => setShowLoseCelebration(false)}>
+                <div className="lose-celebration-content">
+                  <div className="lose-icon">😢</div>
+                  <div className="lose-title">HAI PERSO!</div>
+                  <div className="lose-subtitle">{aiName} ha vinto questa volta...</div>
+                  <div className="lose-hint">clicca per continuare</div>
+                </div>
               </div>
             )}
 
