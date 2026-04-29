@@ -1541,15 +1541,15 @@ export default function PongGame() {
             style={{ width: gameWidth, height: gameHeight }}
           >
             <div className="tennis-lines-layer" aria-hidden="true">
-              <div className="tennis-line doubles-top" />
-              <div className="tennis-line doubles-bottom" />
               <div className="tennis-line singles-top" />
               <div className="tennis-line singles-bottom" />
+              <div className="tennis-line singles-left" />
+              <div className="tennis-line singles-right" />
+              <div className="tennis-line baseline-left" />
+              <div className="tennis-line baseline-right" />
               <div className="tennis-line service-left" />
               <div className="tennis-line service-right" />
               <div className="tennis-line service-center" />
-              <div className="doubles-alley top" />
-              <div className="doubles-alley bottom" />
             </div>
 
             {countdownValue !== null && (
@@ -1560,7 +1560,10 @@ export default function PongGame() {
 
             <div
               className="paddle-avatar-tag ai-avatar-tag"
-              style={{ left: aiPaddleX - 12, top: aiPaddleY + paddleHeight / 2 }}
+              style={{
+                left: Math.max(18, Math.min(gameWidth - 18, aiPaddleX - 12)),
+                top: aiPaddleY + paddleHeight / 2,
+              }}
             >
               {aiAvatarUrl ? (
                 <img src={aiAvatarUrl} alt={`Avatar ${aiName}`} className="paddle-avatar-image" />
@@ -1571,7 +1574,10 @@ export default function PongGame() {
 
             <div
               className="paddle-avatar-tag player-avatar-tag"
-              style={{ left: playerPaddleX + paddleWidth + 12, top: playerPaddleY + paddleHeight / 2 }}
+              style={{
+                left: Math.max(18, Math.min(gameWidth - 18, playerPaddleX + paddleWidth + 12)),
+                top: playerPaddleY + paddleHeight / 2,
+              }}
             >
               {playerAvatarUrl ? (
                 <img src={playerAvatarUrl} alt={`Avatar ${playerName}`} className="paddle-avatar-image" />
