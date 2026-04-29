@@ -599,16 +599,25 @@ export default function PongGame() {
     waitingForAiServe,
   ]);
 
+  // Background MP3 music (432 Hz)
   useEffect(() => {
-    playBackgroundLoop();
-    globalMusicIntervalRef.current = setInterval(() => {
-      playBackgroundLoop();
-    }, 11000);
-
+    const audio = new Audio('/audio/Drake Stafford - 432 Hz.mp3');
+    audio.loop = true;
+    audio.volume = isMutedRef.current
+      ? 0
+      : Math.min(1, masterVolumeRef.current * crowdVolumeRef.current * 0.35);
+    bgMusicRef.current = audio;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        const resume = () => { audio.play().catch(() => {}); document.removeEventListener('click', resume); };
+        document.addEventListener('click', resume, { once: true });
+      });
+    }
     return () => {
-      if (globalMusicIntervalRef.current) {
-        clearInterval(globalMusicIntervalRef.current);
-      }
+      audio.pause();
+      audio.src = '';
+      bgMusicRef.current = null;
       if (serveTimeoutRef.current) {
         clearTimeout(serveTimeoutRef.current);
       }
