@@ -115,16 +115,6 @@ export default function PongGame() {
   const gameHeight = Math.max(minResponsiveHeight, viewportSize.height - uiVerticalReserve);
   const singlesTopY = gameHeight * 0.2;
   const singlesBottomY = gameHeight * 0.8;
-  const singlesCenterY = (singlesTopY + singlesBottomY) / 2;
-  const serveBandHalfHeight = gameHeight * 0.08;
-  const servePaddleMinY = Math.max(
-    singlesTopY,
-    singlesCenterY - serveBandHalfHeight - paddleHeight / 2
-  );
-  const servePaddleMaxY = Math.min(
-    singlesBottomY - paddleHeight,
-    singlesCenterY + serveBandHalfHeight - paddleHeight / 2
-  );
   const playerAreaMinX = gameWidth / 2 + 10;
   const playerAreaMaxX = gameWidth - paddleWidth - sideMargin;
   const aiAreaMinX = sideMargin;
@@ -141,6 +131,21 @@ export default function PongGame() {
   const [aiPaddleY, setAiPaddleY] = useState(gameHeight / 2 - paddleHeight / 2);
   const [playerScore, setPlayerScore] = useState(0);
   const [aiScore, setAiScore] = useState(0);
+  const singlesPlayableHeight = singlesBottomY - singlesTopY;
+  const totalPointsPlayed = playerScore + aiScore;
+  const serveFromTopCorner = totalPointsPlayed % 2 === 0;
+  const serveZoneHeight = Math.max(48, singlesPlayableHeight * 0.24);
+  const serveZoneWidth = Math.max(52, gameWidth * 0.16);
+  const servePaddleMinY = serveFromTopCorner
+    ? singlesTopY
+    : singlesBottomY - paddleHeight - serveZoneHeight;
+  const servePaddleMaxY = serveFromTopCorner
+    ? singlesTopY + serveZoneHeight
+    : singlesBottomY - paddleHeight;
+  const playerServeMinX = Math.max(playerAreaMinX, playerAreaMaxX - serveZoneWidth);
+  const playerServeMaxX = playerAreaMaxX;
+  const aiServeMinX = aiAreaMinX;
+  const aiServeMaxX = Math.min(aiAreaMaxX, aiAreaMinX + serveZoneWidth);
   const [playerName, setPlayerName] = useState('Player');
   const [aiName, setAiName] = useState('AI');
   const [playerColor, setPlayerColor] = useState('#00d4ff');
@@ -1001,17 +1006,21 @@ export default function PongGame() {
       }
 
       if (waitingForPlayerServe) {
+        const servePlayerPaddleX = Math.max(
+          playerServeMinX,
+          Math.min(playerServeMaxX, nextPlayerPaddleX)
+        );
         const servePlayerPaddleY = Math.max(
           servePaddleMinY,
           Math.min(servePaddleMaxY, nextPlayerPaddleY)
         );
-        const attachedBallX = nextPlayerPaddleX - ballSize;
+        const attachedBallX = servePlayerPaddleX - ballSize;
         const attachedBallY = servePlayerPaddleY + paddleHeight / 2 - ballSize / 2;
         const normalServePressed = keysPressed.current[' '] || keysPressed.current['Enter'];
         const spinServePressed = keysPressed.current['s'] || keysPressed.current['S'];
         const aceServePressed = keysPressed.current['a'] || keysPressed.current['A'];
 
-        setPlayerPaddleX(nextPlayerPaddleX);
+        setPlayerPaddleX(servePlayerPaddleX);
         setPlayerPaddleY(servePlayerPaddleY);
         setBallX(attachedBallX);
         setBallY(attachedBallY);
@@ -1056,15 +1065,20 @@ export default function PongGame() {
       }
 
       if (waitingForAiServe) {
+        const serveAiPaddleX = Math.max(
+          aiServeMinX,
+          Math.min(aiServeMaxX, aiPaddleX)
+        );
         const serveAiPaddleY = Math.max(
           servePaddleMinY,
           Math.min(servePaddleMaxY, aiPaddleY)
         );
-        const attachedBallX = aiPaddleX + paddleWidth;
+        const attachedBallX = serveAiPaddleX + paddleWidth;
         const attachedBallY = serveAiPaddleY + paddleHeight / 2 - ballSize / 2;
 
         setPlayerPaddleX(nextPlayerPaddleX);
         setPlayerPaddleY(nextPlayerPaddleY);
+        setAiPaddleX(serveAiPaddleX);
         setAiPaddleY(serveAiPaddleY);
         setBallX(attachedBallX);
         setBallY(attachedBallY);
@@ -1367,6 +1381,10 @@ export default function PongGame() {
     singlesBottomY,
     servePaddleMinY,
     servePaddleMaxY,
+    playerServeMinX,
+    playerServeMaxX,
+    aiServeMinX,
+    aiServeMaxX,
     aiAreaMinX,
     aiAreaMaxX,
     playerAreaMinX,
