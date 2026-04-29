@@ -866,6 +866,7 @@ body {
 
 .paddle {
   position: absolute;
+  z-index: 4;
   width: 10px;
   height: 80px;
   border-radius: 8px;
@@ -919,7 +920,7 @@ body {
 
 .paddle-avatar-tag {
   position: absolute;
-  z-index: 7;
+  z-index: 2;
   width: 34px;
   height: 34px;
   border-radius: 999px;

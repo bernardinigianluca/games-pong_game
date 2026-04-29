@@ -1548,7 +1548,7 @@ export default function PongGame() {
 
             <div
               className="paddle-avatar-tag ai-avatar-tag"
-              style={{ left: aiPaddleX + paddleWidth + 12, top: aiPaddleY + paddleHeight / 2 }}
+              style={{ left: aiPaddleX - 12, top: aiPaddleY + paddleHeight / 2 }}
             >
               {aiAvatarUrl ? (
                 <img src={aiAvatarUrl} alt={`Avatar ${aiName}`} className="paddle-avatar-image" />
@@ -1559,7 +1559,7 @@ export default function PongGame() {
 
             <div
               className="paddle-avatar-tag player-avatar-tag"
-              style={{ left: playerPaddleX - 12, top: playerPaddleY + paddleHeight / 2 }}
+              style={{ left: playerPaddleX + paddleWidth + 12, top: playerPaddleY + paddleHeight / 2 }}
             >
               {playerAvatarUrl ? (
                 <img src={playerAvatarUrl} alt={`Avatar ${playerName}`} className="paddle-avatar-image" />
