@@ -1540,6 +1540,18 @@ export default function PongGame() {
             className={`game-board ${pointFlashSide ? `flash-${pointFlashSide}` : ''}`}
             style={{ width: gameWidth, height: gameHeight }}
           >
+            <div className="tennis-lines-layer" aria-hidden="true">
+              <div className="tennis-line doubles-top" />
+              <div className="tennis-line doubles-bottom" />
+              <div className="tennis-line singles-top" />
+              <div className="tennis-line singles-bottom" />
+              <div className="tennis-line service-left" />
+              <div className="tennis-line service-right" />
+              <div className="tennis-line service-center" />
+              <div className="doubles-alley top" />
+              <div className="doubles-alley bottom" />
+            </div>
+
             {countdownValue !== null && (
               <div className="countdown-overlay">
                 <span className="countdown-number">{countdownValue}</span>
