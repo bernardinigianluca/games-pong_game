@@ -40,6 +40,34 @@ const pickRandomTrackFromList = (tracks, currentTrackFile = null) => {
   return nextTrackFile;
 };
 
+const hashString = (value) => {
+  const text = String(value || '');
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash << 5) - hash + text.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+};
+
+const getAvatarPaddleTheme = (avatarFile, fallbackColor, sideTag) => {
+  const seed = hashString(`${avatarFile || fallbackColor || sideTag}`);
+  const skinClass = [
+    'paddle-skin-neon',
+    'paddle-skin-cyber',
+    'paddle-skin-glass',
+    'paddle-skin-carbon',
+  ][seed % 4];
+  const hue = seed % 360;
+
+  return {
+    skinClass,
+    glowColor: `hsla(${hue}, 90%, 68%, 0.75)`,
+    accentColor: `hsla(${hue}, 95%, 72%, 0.55)`,
+    stripeColor: `hsla(${(hue + 62) % 360}, 92%, 70%, 0.45)`,
+  };
+};
+
 const pickRandomAvatarPair = (avatars) => {
   if (!Array.isArray(avatars) || avatars.length === 0) {
     return { player: '', ai: '' };
@@ -136,6 +164,8 @@ export default function PongGame() {
   const [pointFlashSide, setPointFlashSide] = useState(null);
   const [isServicePulse, setIsServicePulse] = useState(false);
   const [scorePopSide, setScorePopSide] = useState(null);
+  const [playerPaddleEmote, setPlayerPaddleEmote] = useState('');
+  const [aiPaddleEmote, setAiPaddleEmote] = useState('');
   const keysPressed = useRef({});
   const audioContextRef = useRef(null);
   const ballOutRef = useRef(false); // ✅ Flag per evitare multiple score
@@ -155,6 +185,8 @@ export default function PongGame() {
   const pointFlashTimeoutRef = useRef(null);
   const servicePulseTimeoutRef = useRef(null);
   const scorePopTimeoutRef = useRef(null);
+  const playerEmoteTimeoutRef = useRef(null);
+  const aiEmoteTimeoutRef = useRef(null);
   const bgMusicRef = useRef(null);
   const selectedTrackRef = useRef(selectedTrackFile);
   const playerAvatarLabel =
@@ -163,6 +195,8 @@ export default function PongGame() {
     avatarOptions.find((avatar) => avatar.file === aiAvatarFile)?.label || 'Nessun avatar';
   const selectedTrackLabel =
     backgroundTracks.find((track) => track.file === selectedTrackFile)?.label || selectedTrackFile;
+  const playerPaddleTheme = getAvatarPaddleTheme(playerAvatarFile, playerColor, 'player');
+  const aiPaddleTheme = getAvatarPaddleTheme(aiAvatarFile, aiColor, 'ai');
   const aiSettings = DIFFICULTY_PRESETS[difficulty];
   const {
     reactionMs,
@@ -633,6 +667,29 @@ export default function PongGame() {
     }, 420);
   }, []);
 
+  const triggerPaddleEmote = useCallback((side, emote) => {
+    if (side === 'player') {
+      if (playerEmoteTimeoutRef.current) {
+        clearTimeout(playerEmoteTimeoutRef.current);
+      }
+      setPlayerPaddleEmote(emote);
+      playerEmoteTimeoutRef.current = setTimeout(() => {
+        setPlayerPaddleEmote('');
+        playerEmoteTimeoutRef.current = null;
+      }, 820);
+      return;
+    }
+
+    if (aiEmoteTimeoutRef.current) {
+      clearTimeout(aiEmoteTimeoutRef.current);
+    }
+    setAiPaddleEmote(emote);
+    aiEmoteTimeoutRef.current = setTimeout(() => {
+      setAiPaddleEmote('');
+      aiEmoteTimeoutRef.current = null;
+    }, 820);
+  }, []);
+
   const applyPaddleBounce = (
     ballCenterY,
     paddleTop,
@@ -793,6 +850,12 @@ export default function PongGame() {
       }
       if (scorePopTimeoutRef.current) {
         clearTimeout(scorePopTimeoutRef.current);
+      }
+      if (playerEmoteTimeoutRef.current) {
+        clearTimeout(playerEmoteTimeoutRef.current);
+      }
+      if (aiEmoteTimeoutRef.current) {
+        clearTimeout(aiEmoteTimeoutRef.current);
       }
       aiServeDueTimeRef.current = null;
     };
@@ -1173,6 +1236,8 @@ export default function PongGame() {
           setGameOver(true);
           setWinner('AI');
           setShowLoseCelebration(true);
+          triggerPaddleEmote('ai', '👑');
+          triggerPaddleEmote('player', '😵');
           playSadTrombone();
           playLosePointCrowd();
         } else {
@@ -1188,6 +1253,8 @@ export default function PongGame() {
           newVelY = 0;
           newSpin = 0;
           setServeVisualMode('none');
+          triggerPaddleEmote('ai', '😎');
+          triggerPaddleEmote('player', '😣');
           playLosePointCrowd();
           ballOutRef.current = false;
         }
@@ -1207,6 +1274,8 @@ export default function PongGame() {
           setGameOver(true);
           setWinner('Player');
           setShowWinCelebration(true);
+          triggerPaddleEmote('player', '🏆');
+          triggerPaddleEmote('ai', '🥶');
           playWinFanfare();
           playCrowdCheer();
         } else {
@@ -1222,6 +1291,8 @@ export default function PongGame() {
           newVelY = 0;
           newSpin = 0;
           setServeVisualMode('none');
+          triggerPaddleEmote('player', '🔥');
+          triggerPaddleEmote('ai', '😬');
           playCrowdCheer();
           ballOutRef.current = false;
           aiServeDueTimeRef.current = null;
@@ -1324,6 +1395,7 @@ export default function PongGame() {
     playLosePointCrowd,
     playSadTrombone,
     playWinFanfare,
+    triggerPaddleEmote,
     reactionMs,
     reactionVarianceMs,
     maxAimErrorY,
@@ -1369,6 +1441,8 @@ export default function PongGame() {
     setPointFlashSide(null);
     setIsServicePulse(false);
     setScorePopSide(null);
+    setPlayerPaddleEmote('');
+    setAiPaddleEmote('');
     setSpeedMultiplier(1);
     refreshBackgroundTracks();
     refreshAvatarOptions();
@@ -1377,6 +1451,14 @@ export default function PongGame() {
     aiTargetXOffsetRef.current = 0;
     paddleHitCooldownUntilRef.current = 0;
     crowdPeakCooldownUntilRef.current = 0;
+    if (playerEmoteTimeoutRef.current) {
+      clearTimeout(playerEmoteTimeoutRef.current);
+      playerEmoteTimeoutRef.current = null;
+    }
+    if (aiEmoteTimeoutRef.current) {
+      clearTimeout(aiEmoteTimeoutRef.current);
+      aiEmoteTimeoutRef.current = null;
+    }
     ballOutRef.current = false; // ✅ Reset flag
   };
 
@@ -1516,6 +1598,24 @@ export default function PongGame() {
               </div>
             )}
 
+            {aiPaddleEmote && (
+              <div
+                className="paddle-emote ai-emote"
+                style={{ left: aiPaddleX + paddleWidth / 2, top: Math.max(18, aiPaddleY - 20) }}
+              >
+                {aiPaddleEmote}
+              </div>
+            )}
+
+            {playerPaddleEmote && (
+              <div
+                className="paddle-emote player-emote"
+                style={{ left: playerPaddleX + paddleWidth / 2, top: Math.max(18, playerPaddleY - 20) }}
+              >
+                {playerPaddleEmote}
+              </div>
+            )}
+
             {showLoseCelebration && (
               <div className="lose-celebration-overlay" onClick={() => setShowLoseCelebration(false)}>
                 <div className="lose-celebration-content">
@@ -1552,12 +1652,14 @@ export default function PongGame() {
             )}
 
             <div
-              className="paddle ai-paddle"
+              className={`paddle ai-paddle ${aiPaddleTheme.skinClass}`}
               style={{
                 left: aiPaddleX,
                 top: aiPaddleY,
                 background: `linear-gradient(to right, ${aiColor}, ${aiColor})`,
-                boxShadow: `0 0 10px ${aiColor}, 0 0 20px ${aiColor}99`,
+                boxShadow: `0 0 10px ${aiColor}, 0 0 20px ${aiPaddleTheme.glowColor}`,
+                '--paddle-accent': aiPaddleTheme.accentColor,
+                '--paddle-stripe': aiPaddleTheme.stripeColor,
               }}
             />
 
@@ -1573,12 +1675,14 @@ export default function PongGame() {
             />
 
             <div
-              className="paddle player-paddle"
+              className={`paddle player-paddle ${playerPaddleTheme.skinClass}`}
               style={{
                 left: playerPaddleX,
                 top: playerPaddleY,
                 background: `linear-gradient(to right, ${playerColor}, ${playerColor})`,
-                boxShadow: `0 0 10px ${playerColor}, 0 0 20px ${playerColor}99`,
+                boxShadow: `0 0 10px ${playerColor}, 0 0 20px ${playerPaddleTheme.glowColor}`,
+                '--paddle-accent': playerPaddleTheme.accentColor,
+                '--paddle-stripe': playerPaddleTheme.stripeColor,
               }}
             />
 
