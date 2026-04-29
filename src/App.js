@@ -98,7 +98,7 @@ export default function PongGame() {
   const [waitingForAiServe, setWaitingForAiServe] = useState(false);
   const [serveVisualMode, setServeVisualMode] = useState('none');
   const [speedMultiplier, setSpeedMultiplier] = useState(1);
-  const [hideCursor, setHideCursor] = useState(false);
+
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
   const [pointFlashSide, setPointFlashSide] = useState(null);
@@ -636,22 +636,7 @@ export default function PongGame() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
-    if (gameActive) {
-      setHideCursor(true);
-    }
-  }, [gameActive]);
-
-  useEffect(() => {
-    if (!hideCursor) return undefined;
-
-    const handleMouseMove = () => {
-      setHideCursor(false);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove, { once: true });
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [hideCursor]);
+  const hideCursor = gameActive && !isPaused && !gameOver;
 
   useEffect(() => {
     setBallX((prev) => Math.max(0, Math.min(gameWidth - ballSize, prev)));
@@ -1123,7 +1108,6 @@ export default function PongGame() {
     setIsServicePulse(false);
     setScorePopSide(null);
     setSpeedMultiplier(1);
-    setHideCursor(false);
     aiDecisionTimeRef.current = 0;
     aiTargetYOffsetRef.current = 0;
     aiTargetXOffsetRef.current = 0;
