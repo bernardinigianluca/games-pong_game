@@ -113,6 +113,8 @@ export default function PongGame() {
     Math.min(maxResponsiveWidth, viewportSize.width - uiHorizontalPadding)
   );
   const gameHeight = Math.max(minResponsiveHeight, viewportSize.height - uiVerticalReserve);
+  const singlesTopY = gameHeight * 0.2;
+  const singlesBottomY = gameHeight * 0.8;
   const playerAreaMinX = gameWidth / 2 + 10;
   const playerAreaMaxX = gameWidth - paddleWidth - sideMargin;
   const aiAreaMinX = sideMargin;
@@ -926,14 +928,16 @@ export default function PongGame() {
 
   useEffect(() => {
     setBallX((prev) => Math.max(0, Math.min(gameWidth - ballSize, prev)));
-    setBallY((prev) => Math.max(0, Math.min(gameHeight - ballSize, prev)));
-    setPlayerPaddleY((prev) => Math.max(0, Math.min(gameHeight - paddleHeight, prev)));
-    setAiPaddleY((prev) => Math.max(0, Math.min(gameHeight - paddleHeight, prev)));
+    setBallY((prev) => Math.max(singlesTopY, Math.min(singlesBottomY - ballSize, prev)));
+    setPlayerPaddleY((prev) => Math.max(singlesTopY, Math.min(singlesBottomY - paddleHeight, prev)));
+    setAiPaddleY((prev) => Math.max(singlesTopY, Math.min(singlesBottomY - paddleHeight, prev)));
     setPlayerPaddleX((prev) => Math.max(playerAreaMinX, Math.min(playerAreaMaxX, prev)));
     setAiPaddleX((prev) => Math.max(aiAreaMinX, Math.min(aiAreaMaxX, prev)));
   }, [
     gameWidth,
     gameHeight,
+    singlesTopY,
+    singlesBottomY,
     playerAreaMinX,
     playerAreaMaxX,
     aiAreaMinX,
@@ -963,10 +967,10 @@ export default function PongGame() {
 
       // Movimento paddle player (applicato prima delle collisioni)
       if (keysPressed.current['ArrowUp']) {
-        nextPlayerPaddleY = Math.max(0, nextPlayerPaddleY - paddleSpeed);
+        nextPlayerPaddleY = Math.max(singlesTopY, nextPlayerPaddleY - paddleSpeed);
       }
       if (keysPressed.current['ArrowDown']) {
-        nextPlayerPaddleY = Math.min(gameHeight - paddleHeight, nextPlayerPaddleY + paddleSpeed);
+        nextPlayerPaddleY = Math.min(singlesBottomY - paddleHeight, nextPlayerPaddleY + paddleSpeed);
       }
       if (keysPressed.current['ArrowLeft']) {
         nextPlayerPaddleX = Math.max(playerAreaMinX, nextPlayerPaddleX - paddleSpeed);
@@ -1098,9 +1102,9 @@ export default function PongGame() {
       const canRegisterPaddleHit = Date.now() >= paddleHitCooldownUntilRef.current;
 
       // Rimbalzo su top e bottom
-      if (newY <= 0 || newY + ballSize >= gameHeight) {
+      if (newY <= singlesTopY || newY + ballSize >= singlesBottomY) {
         newVelY = -newVelY;
-        newY = Math.max(0, Math.min(gameHeight - ballSize, newY));
+        newY = Math.max(singlesTopY, Math.min(singlesBottomY - ballSize, newY));
         setServeVisualMode('none');
         playWallHit();
       }
@@ -1292,9 +1296,9 @@ export default function PongGame() {
         const aiSpeed = paddleSpeed * verticalSpeedFactor;
 
         if (targetCenterY < aiCenter - 14) {
-          return Math.max(0, prev - aiSpeed);
+          return Math.max(singlesTopY, prev - aiSpeed);
         } else if (targetCenterY > aiCenter + 14) {
-          return Math.min(gameHeight - paddleHeight, prev + aiSpeed);
+          return Math.min(singlesBottomY - paddleHeight, prev + aiSpeed);
         }
         return prev;
       });
@@ -1340,6 +1344,8 @@ export default function PongGame() {
     speedMultiplier,
     gameWidth,
     gameHeight,
+    singlesTopY,
+    singlesBottomY,
     aiAreaMinX,
     aiAreaMaxX,
     playerAreaMinX,
@@ -1541,6 +1547,8 @@ export default function PongGame() {
             style={{ width: gameWidth, height: gameHeight }}
           >
             <div className="tennis-lines-layer" aria-hidden="true">
+              <div className="tennis-line doubles-top" />
+              <div className="tennis-line doubles-bottom" />
               <div className="tennis-line singles-top" />
               <div className="tennis-line singles-bottom" />
               <div className="tennis-line singles-left" />
@@ -1550,6 +1558,8 @@ export default function PongGame() {
               <div className="tennis-line service-left" />
               <div className="tennis-line service-right" />
               <div className="tennis-line service-center" />
+              <div className="doubles-alley top" />
+              <div className="doubles-alley bottom" />
             </div>
 
             {countdownValue !== null && (

@@ -477,10 +477,24 @@ body {
   box-shadow: 0 0 6px rgba(220, 246, 255, 0.26);
 }
 
+.tennis-line.doubles-top,
+.tennis-line.doubles-bottom,
 .tennis-line.singles-top,
 .tennis-line.singles-bottom,
 .tennis-line.service-center {
   height: 2px;
+}
+
+.tennis-line.doubles-top {
+  left: 12px;
+  right: 12px;
+  top: 8%;
+}
+
+.tennis-line.doubles-bottom {
+  left: 12px;
+  right: 12px;
+  bottom: 8%;
 }
 
 .tennis-line.singles-top {
@@ -520,8 +534,8 @@ body {
 
 .tennis-line.baseline-left,
 .tennis-line.baseline-right {
-  top: 20%;
-  bottom: 20%;
+  top: 8%;
+  bottom: 8%;
 }
 
 .tennis-line.baseline-left {
@@ -549,6 +563,27 @@ body {
   right: 32%;
   top: 50%;
   transform: translateY(-50%);
+}
+
+.doubles-alley {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(130, 198, 225, 0.08) 0 12px,
+    rgba(130, 198, 225, 0.02) 12px 24px
+  );
+}
+
+.doubles-alley.top {
+  top: 8%;
+  height: 12%;
+}
+
+.doubles-alley.bottom {
+  bottom: 8%;
+  height: 12%;
 }
 
 .game-board.flash-left::before {
