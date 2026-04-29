@@ -244,6 +244,14 @@ export default function PongGame() {
     setSelectedTrackFile((prev) => pickRandomTrackFromList(backgroundTracks, prev));
   }, [backgroundTracks]);
 
+  const handlePickRandomPlayerAvatar = useCallback(() => {
+    setPlayerAvatarFile((prev) => pickRandomTrackFromList(avatarOptions, prev));
+  }, [avatarOptions]);
+
+  const handlePickRandomAiAvatar = useCallback(() => {
+    setAiAvatarFile((prev) => pickRandomTrackFromList(avatarOptions, prev));
+  }, [avatarOptions]);
+
   useEffect(() => {
     refreshBackgroundTracks();
     refreshAvatarOptions();
@@ -1605,6 +1613,13 @@ export default function PongGame() {
                   </option>
                 ))}
               </select>
+              <button
+                onClick={handlePickRandomPlayerAvatar}
+                className="audio-toggle-btn"
+                disabled={avatarOptions.length === 0}
+              >
+                Avatar casuale Player
+              </button>
 
               <label htmlFor="ai-avatar">Avatar AI</label>
               <select
@@ -1620,6 +1635,13 @@ export default function PongGame() {
                   </option>
                 ))}
               </select>
+              <button
+                onClick={handlePickRandomAiAvatar}
+                className="audio-toggle-btn"
+                disabled={avatarOptions.length === 0}
+              >
+                Avatar casuale AI
+              </button>
 
               <label htmlFor="speed">Velocità Pallina: {speedMultiplier.toFixed(1)}x</label>
               <input
