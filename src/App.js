@@ -216,10 +216,61 @@ export default function PongGame() {
   }, [playSound]);
 
   const playBackgroundLoop = useCallback(() => {
-    [196, 247, 294, 247].forEach((freq, idx) => {
-      setTimeout(() => playSound(freq, 0.58, 'crowd', 'sine', 0.3), idx * 310);
+    const audioContext = audioContextRef.current;
+    if (!audioContext) return;
+    const vol = isMutedRef.current
+      ? 0
+      : Math.min(1, masterVolumeRef.current * crowdVolumeRef.current * 0.22);
+    if (vol <= 0.0001) return;
+    if (audioContext.state === 'suspended') audioContext.resume();
+
+    // ── 432 Hz tuning (A4 = 432) — A minor pentatonic ──────────────
+    const A2  = 108.00;  // drone root
+    const E3  = 161.82;  // perfect fifth
+    const A3  = 216.00;  // octave
+    const C4  = 256.87;  // minor third
+    const D4  = 288.32;  // fourth
+    const E4  = 323.43;  // fifth
+    const G4  = 384.00;  // minor seventh (432 * 8/9 * 2 = approx)
+    const A4  = 432.00;  // root high
+
+    // Slow sustained pad chord — sine waves with long attack & release
+    [[A2, 0.50], [E3, 0.40], [A3, 0.35]].forEach(([freq, gain], i) => {
+      const osc = audioContext.createOscillator();
+      const gn  = audioContext.createGain();
+      osc.connect(gn);
+      gn.connect(audioContext.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      // slight detuning for warmth
+      osc.detune.value = i === 1 ? 2 : i === 2 ? -2 : 0;
+      const t = audioContext.currentTime + i * 0.12;
+      gn.gain.setValueAtTime(0, t);
+      gn.gain.linearRampToValueAtTime(vol * gain, t + 1.8);   // slow attack
+      gn.gain.setValueAtTime(vol * gain,           t + 7.2);
+      gn.gain.linearRampToValueAtTime(0,            t + 9.8); // slow release
+      osc.start(t);
+      osc.stop(t + 10.0);
     });
-  }, [playSound]);
+
+    // Gentle ambient arpeggio — soft sine notes, pentatonic at 432 Hz
+    const melody = [A3, C4, E4, D4, A3, G4, E4, C4, D4, A4];
+    melody.forEach((freq, i) => {
+      const osc = audioContext.createOscillator();
+      const gn  = audioContext.createGain();
+      osc.connect(gn);
+      gn.connect(audioContext.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t   = audioContext.currentTime + 1.5 + i * 0.95;
+      const dur = 1.6;
+      gn.gain.setValueAtTime(0,           t);
+      gn.gain.linearRampToValueAtTime(vol * 0.28, t + 0.35); // soft attack
+      gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.start(t);
+      osc.stop(t + dur + 0.1);
+    });
+  }, [audioContextRef, isMutedRef, masterVolumeRef, crowdVolumeRef]);
 
   const playCrowdCheer = useCallback(() => {
     [320, 420, 560, 700].forEach((freq, idx) => {
@@ -607,7 +658,7 @@ export default function PongGame() {
     playBackgroundLoop();
     globalMusicIntervalRef.current = setInterval(() => {
       playBackgroundLoop();
-    }, 4600);
+    }, 11000);
 
     return () => {
       if (globalMusicIntervalRef.current) {
