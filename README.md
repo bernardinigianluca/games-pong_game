@@ -1,70 +1,84 @@
-# Getting Started with Create React App
+# Pong Game - AI Open
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Pong moderno con UI sportiva, audio dinamico, servizio selezionabile e adattamento responsive desktop/mobile.
 
-## Available Scripts
+## Scripts
 
-In the project directory, you can run:
+Nel progetto puoi usare:
 
-### `npm start`
+- npm start: avvia in sviluppo.
+- npm run build: crea la build di produzione.
+- npm test: avvia i test in watch mode.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Gameplay
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- A inizio match scegli chi serve per primo.
+- Premi Inizia Partita per il countdown.
+- Durante il servizio Player:
+	- Spazio o Invio: servizio normale
+	- S: servizio con effetto
+	- A: servizio ace
 
-### `npm test`
+## Responsive Notes
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Il campo scala in base al viewport con soglie desktop/tablet/mobile.
+- Topbar e pulsanti cambiano layout a breakpoint intermedi.
+- Il contenitore usa safe-area per dispositivi con notch.
 
-### `npm run build`
+## Visual QA Checklist
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Test rapido consigliato prima di release.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+1. Desktop 1920x1080
+- Schermata centrata orizzontalmente.
+- Scoreboard leggibile e senza overlap.
+- Countdown ben visibile, nessun clipping del campo.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+2. Laptop 1366x768
+- Header, topbar e campo visibili senza tagli verticali.
+- Pulsanti principali tutti cliccabili senza scroll orizzontale.
 
-### `npm run eject`
+3. Tablet 820x1180 (portrait)
+- Topbar in colonna.
+- Campo centrato e proporzionato.
+- Modal Settings leggibile e chiudibile facilmente.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+4. Mobile 390x844
+- Nessun contenuto spinto fuori schermo a destra.
+- Pulsanti con area touch adeguata.
+- Campo ancora giocabile e centrato.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+5. Eventi gioco
+- Flash lato punto segnato visibile ma breve.
+- Pop del punteggio sul lato corretto.
+- Badge servizio con pulse al cambio servizio.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+6. Accessibilita e motion
+- Focus visibile su bottoni e input.
+- Con preferenze reduced motion, animazioni quasi disattivate.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Build Check
 
-## Learn More
+Se npm run build termina con successo, la versione e pronta per deploy statico su qualsiasi hosting.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Pre-Release in 60 Secondi
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Procedura rapida consigliata prima di pubblicare:
 
-### Code Splitting
+1. Dev check veloce
+- Avvia: npm start
+- Verifica che l'app si apra senza errori bloccanti in console.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+2. Build check
+- Esegui: npm run build
+- Conferma: Compiled successfully.
 
-### Analyzing the Bundle Size
+3. Smoke test (2-3 minuti)
+- Avvia un match: scegli il primo server, countdown, servizio.
+- Verifica punto AI e punto Player: flash lato corretto + pop punteggio.
+- Apri Settings: controlla slider, audio toggle, cambio colori.
+- Ridimensiona finestra desktop/mobile: layout centrato, nessun overflow a destra.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+4. Go / No-Go
+- GO: nessun errore bloccante, gameplay ok, build ok.
+- NO-GO: bug di gameplay, layout rotto, build fallita.
