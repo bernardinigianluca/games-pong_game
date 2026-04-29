@@ -101,6 +101,7 @@ export default function PongGame() {
 
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [showWinCelebration, setShowWinCelebration] = useState(false);
   const [pointFlashSide, setPointFlashSide] = useState(null);
   const [isServicePulse, setIsServicePulse] = useState(false);
   const [scorePopSide, setScorePopSide] = useState(null);
@@ -243,10 +244,54 @@ export default function PongGame() {
   }, [playCrowdCheer, playLosePointCrowd]);
 
   const playWinFanfare = useCallback(() => {
-    [523, 659, 784, 1046].forEach((freq, idx) => {
-      setTimeout(() => playSound(freq, 0.18, 'effects'), idx * 120);
+    const audioContext = audioContextRef.current;
+    if (!audioContext) return;
+    const vol = isMutedRef.current ? 0 : Math.min(1, masterVolumeRef.current * effectsVolumeRef.current * 1.2);
+    if (vol <= 0) return;
+    if (audioContext.state === 'suspended') audioContext.resume();
+
+    // Victory fanfare: ascending arpeggio + triumphant chord + final flourish
+    const notes = [
+      { freq: 523.25, t: 0,    dur: 0.18 }, // C5
+      { freq: 659.25, t: 0.13, dur: 0.18 }, // E5
+      { freq: 783.99, t: 0.26, dur: 0.18 }, // G5
+      { freq: 1046.5, t: 0.39, dur: 0.28 }, // C6
+      { freq: 1318.5, t: 0.55, dur: 0.22 }, // E6
+      { freq: 1046.5, t: 0.72, dur: 0.14 }, // C6
+      { freq: 1318.5, t: 0.80, dur: 0.14 }, // E6
+      { freq: 1567.98,t: 0.88, dur: 0.55 }, // G6 long
+    ];
+
+    notes.forEach(({ freq, t, dur }) => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      const start = audioContext.currentTime + t;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(vol * 0.5, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      osc.start(start);
+      osc.stop(start + dur + 0.05);
     });
-  }, [playSound]);
+
+    // Harmony chord at the end
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq) => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const start = audioContext.currentTime + 0.88;
+      gain.gain.setValueAtTime(vol * 0.25, start);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 1.2);
+      osc.start(start);
+      osc.stop(start + 1.3);
+    });
+  }, [audioContextRef, isMutedRef, masterVolumeRef, effectsVolumeRef]);
 
   const playCrowdAmbienceLayer = useCallback(() => {
     const soundType = Math.random();
@@ -948,6 +993,7 @@ export default function PongGame() {
           setGameActive(false);
           setGameOver(true);
           setWinner('Player');
+          setShowWinCelebration(true);
           playWinFanfare();
           playCrowdCheer();
         } else {
@@ -1104,6 +1150,7 @@ export default function PongGame() {
     setWaitingForAiServe(false);
     setGameOver(false);
     setWinner(null);
+    setShowWinCelebration(false);
     setPointFlashSide(null);
     setIsServicePulse(false);
     setScorePopSide(null);
@@ -1230,6 +1277,30 @@ export default function PongGame() {
             {countdownValue !== null && (
               <div className="countdown-overlay">
                 <span className="countdown-number">{countdownValue}</span>
+              </div>
+            )}
+
+            {showWinCelebration && (
+              <div className="win-celebration-overlay" onClick={() => setShowWinCelebration(false)}>
+                <div className="win-celebration-content">
+                  <div className="win-trophy">🏆</div>
+                  <div className="win-title">HAI VINTO!</div>
+                  <div className="win-subtitle">{playerName} · Campione</div>
+                </div>
+                {Array.from({ length: 28 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="confetti-piece"
+                    style={{
+                      '--cx': `${Math.random() * 100}%`,
+                      '--cy': `${-10 - Math.random() * 20}%`,
+                      '--cr': `${Math.random() * 360}deg`,
+                      '--cd': `${0.2 + Math.random() * 1.4}s`,
+                      '--cs': `${0.6 + Math.random() * 0.8}`,
+                      '--cc': `hsl(${Math.floor(Math.random() * 360)}, 90%, 65%)`,
+                    }}
+                  />
+                ))}
               </div>
             )}
 
