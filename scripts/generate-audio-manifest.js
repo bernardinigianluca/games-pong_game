@@ -4,6 +4,7 @@ const path = require('path');
 const projectRoot = path.resolve(__dirname, '..');
 const audioDir = path.join(projectRoot, 'public', 'audio');
 const manifestPath = path.join(audioDir, 'manifest.json');
+const manifestFileName = path.basename(manifestPath);
 const watchMode = process.argv.includes('--watch');
 
 const toLabel = (fileName) => fileName.replace(/\.[^.]+$/, '').trim();
@@ -22,7 +23,16 @@ const generateManifest = () => {
     .sort((a, b) => a.localeCompare(b))
     .map((file) => ({ file, label: toLabel(file) }));
 
-  fs.writeFileSync(manifestPath, JSON.stringify(tracks, null, 2) + '\n', 'utf8');
+  const nextContent = JSON.stringify(tracks, null, 2) + '\n';
+  const prevContent = fs.existsSync(manifestPath)
+    ? fs.readFileSync(manifestPath, 'utf8')
+    : null;
+
+  if (prevContent === nextContent) {
+    return;
+  }
+
+  fs.writeFileSync(manifestPath, nextContent, 'utf8');
   console.log(`[audio-manifest] updated ${tracks.length} tracks`);
 };
 
@@ -32,7 +42,10 @@ if (watchMode) {
   console.log('[audio-manifest] watch mode enabled');
   let debounceTimer = null;
 
-  fs.watch(audioDir, () => {
+  fs.watch(audioDir, (_eventType, fileName) => {
+    if (typeof fileName === 'string' && fileName.toLowerCase() === manifestFileName.toLowerCase()) {
+      return;
+    }
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       try {
