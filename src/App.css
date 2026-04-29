@@ -74,6 +74,62 @@ body {
   cursor: none;
 }
 
+.startup-poster-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background:
+    radial-gradient(circle at 15% 12%, rgba(255, 179, 86, 0.22), transparent 42%),
+    radial-gradient(circle at 85% 14%, rgba(88, 216, 255, 0.28), transparent 44%),
+    rgba(3, 9, 14, 0.82);
+  backdrop-filter: blur(5px);
+}
+
+.startup-poster-card {
+  width: min(1020px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.startup-poster-image {
+  width: 100%;
+  max-height: min(80vh, 760px);
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid rgba(151, 224, 249, 0.45);
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.55);
+}
+
+.startup-poster-enter-btn {
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 0.72rem 1.2rem;
+  font-family: 'Chakra Petch', 'Segoe UI', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  background: linear-gradient(135deg, rgba(88, 216, 255, 0.2), rgba(255, 179, 86, 0.18));
+  cursor: pointer;
+  transition: transform 140ms ease, filter 140ms ease;
+}
+
+.startup-poster-enter-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.startup-poster-enter-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .game-header {
   width: min(1180px, 100%);
   text-align: center;

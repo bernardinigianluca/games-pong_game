@@ -173,6 +173,7 @@ export default function PongGame() {
   const [waitingForAiServe, setWaitingForAiServe] = useState(false);
   const [serveVisualMode, setServeVisualMode] = useState('none');
   const [speedMultiplier, setSpeedMultiplier] = useState(1);
+  const [showStartupPoster, setShowStartupPoster] = useState(true);
 
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
@@ -1493,6 +1494,9 @@ export default function PongGame() {
   const aiAvatarUrl = aiAvatarFile ? `/avatars/${encodeURIComponent(aiAvatarFile)}` : '';
   const playerFallbackInitial = (playerName || 'P').trim().charAt(0).toUpperCase() || 'P';
   const aiFallbackInitial = (aiName || 'A').trim().charAt(0).toUpperCase() || 'A';
+  const closeStartupPoster = () => {
+    setShowStartupPoster(false);
+  };
 
   return (
     <div className={`game-container ${gamePhase} ${hideCursor ? 'hide-cursor' : ''}`}>
@@ -1935,6 +1939,21 @@ export default function PongGame() {
                 className="color-input"
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {showStartupPoster && (
+        <div className="startup-poster-overlay" onClick={closeStartupPoster}>
+          <div className="startup-poster-card" onClick={(e) => e.stopPropagation()}>
+            <img
+              src="/poster/poster1.png"
+              alt="Poster introduttivo del gioco Pong"
+              className="startup-poster-image"
+            />
+            <button onClick={closeStartupPoster} className="startup-poster-enter-btn">
+              Entra nel gioco
+            </button>
           </div>
         </div>
       )}
