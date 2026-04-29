@@ -40,6 +40,19 @@ const pickRandomTrackFromList = (tracks, currentTrackFile = null) => {
   return nextTrackFile;
 };
 
+const pickRandomAvatarPair = (avatars) => {
+  if (!Array.isArray(avatars) || avatars.length === 0) {
+    return { player: '', ai: '' };
+  }
+
+  const player = pickRandomTrackFromList(avatars);
+  const ai = avatars.length > 1
+    ? pickRandomTrackFromList(avatars, player)
+    : player;
+
+  return { player, ai };
+};
+
 export default function PongGame() {
   const ballSize = 10;
   const paddleWidth = 10;
@@ -658,6 +671,11 @@ export default function PongGame() {
       !waitingForMatchStart ||
       !initialServer
     ) return;
+
+    const randomAvatars = pickRandomAvatarPair(avatarOptions);
+    setPlayerAvatarFile(randomAvatars.player);
+    setAiAvatarFile(randomAvatars.ai);
+
     if (!hasPlayedWelcome) {
       playWelcomeJingle();
       setHasPlayedWelcome(true);
@@ -697,6 +715,7 @@ export default function PongGame() {
       ballOutRef.current = false;
     }, 1000);
   }, [
+    avatarOptions,
     ballSize,
     gameHeight,
     gameOver,
