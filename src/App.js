@@ -164,8 +164,6 @@ export default function PongGame() {
   const [pointFlashSide, setPointFlashSide] = useState(null);
   const [isServicePulse, setIsServicePulse] = useState(false);
   const [scorePopSide, setScorePopSide] = useState(null);
-  const [playerPaddleEmote, setPlayerPaddleEmote] = useState('');
-  const [aiPaddleEmote, setAiPaddleEmote] = useState('');
   const keysPressed = useRef({});
   const audioContextRef = useRef(null);
   const ballOutRef = useRef(false); // ✅ Flag per evitare multiple score
@@ -185,8 +183,6 @@ export default function PongGame() {
   const pointFlashTimeoutRef = useRef(null);
   const servicePulseTimeoutRef = useRef(null);
   const scorePopTimeoutRef = useRef(null);
-  const playerEmoteTimeoutRef = useRef(null);
-  const aiEmoteTimeoutRef = useRef(null);
   const bgMusicRef = useRef(null);
   const selectedTrackRef = useRef(selectedTrackFile);
   const playerAvatarLabel =
@@ -667,29 +663,6 @@ export default function PongGame() {
     }, 420);
   }, []);
 
-  const triggerPaddleEmote = useCallback((side, emote) => {
-    if (side === 'player') {
-      if (playerEmoteTimeoutRef.current) {
-        clearTimeout(playerEmoteTimeoutRef.current);
-      }
-      setPlayerPaddleEmote(emote);
-      playerEmoteTimeoutRef.current = setTimeout(() => {
-        setPlayerPaddleEmote('');
-        playerEmoteTimeoutRef.current = null;
-      }, 820);
-      return;
-    }
-
-    if (aiEmoteTimeoutRef.current) {
-      clearTimeout(aiEmoteTimeoutRef.current);
-    }
-    setAiPaddleEmote(emote);
-    aiEmoteTimeoutRef.current = setTimeout(() => {
-      setAiPaddleEmote('');
-      aiEmoteTimeoutRef.current = null;
-    }, 820);
-  }, []);
-
   const applyPaddleBounce = (
     ballCenterY,
     paddleTop,
@@ -850,12 +823,6 @@ export default function PongGame() {
       }
       if (scorePopTimeoutRef.current) {
         clearTimeout(scorePopTimeoutRef.current);
-      }
-      if (playerEmoteTimeoutRef.current) {
-        clearTimeout(playerEmoteTimeoutRef.current);
-      }
-      if (aiEmoteTimeoutRef.current) {
-        clearTimeout(aiEmoteTimeoutRef.current);
       }
       aiServeDueTimeRef.current = null;
     };
@@ -1236,8 +1203,6 @@ export default function PongGame() {
           setGameOver(true);
           setWinner('AI');
           setShowLoseCelebration(true);
-          triggerPaddleEmote('ai', '👑');
-          triggerPaddleEmote('player', '😵');
           playSadTrombone();
           playLosePointCrowd();
         } else {
@@ -1253,8 +1218,6 @@ export default function PongGame() {
           newVelY = 0;
           newSpin = 0;
           setServeVisualMode('none');
-          triggerPaddleEmote('ai', '😎');
-          triggerPaddleEmote('player', '😣');
           playLosePointCrowd();
           ballOutRef.current = false;
         }
@@ -1274,8 +1237,6 @@ export default function PongGame() {
           setGameOver(true);
           setWinner('Player');
           setShowWinCelebration(true);
-          triggerPaddleEmote('player', '🏆');
-          triggerPaddleEmote('ai', '🥶');
           playWinFanfare();
           playCrowdCheer();
         } else {
@@ -1291,8 +1252,6 @@ export default function PongGame() {
           newVelY = 0;
           newSpin = 0;
           setServeVisualMode('none');
-          triggerPaddleEmote('player', '🔥');
-          triggerPaddleEmote('ai', '😬');
           playCrowdCheer();
           ballOutRef.current = false;
           aiServeDueTimeRef.current = null;
@@ -1395,7 +1354,6 @@ export default function PongGame() {
     playLosePointCrowd,
     playSadTrombone,
     playWinFanfare,
-    triggerPaddleEmote,
     reactionMs,
     reactionVarianceMs,
     maxAimErrorY,
@@ -1441,8 +1399,6 @@ export default function PongGame() {
     setPointFlashSide(null);
     setIsServicePulse(false);
     setScorePopSide(null);
-    setPlayerPaddleEmote('');
-    setAiPaddleEmote('');
     setSpeedMultiplier(1);
     refreshBackgroundTracks();
     refreshAvatarOptions();
@@ -1451,14 +1407,6 @@ export default function PongGame() {
     aiTargetXOffsetRef.current = 0;
     paddleHitCooldownUntilRef.current = 0;
     crowdPeakCooldownUntilRef.current = 0;
-    if (playerEmoteTimeoutRef.current) {
-      clearTimeout(playerEmoteTimeoutRef.current);
-      playerEmoteTimeoutRef.current = null;
-    }
-    if (aiEmoteTimeoutRef.current) {
-      clearTimeout(aiEmoteTimeoutRef.current);
-      aiEmoteTimeoutRef.current = null;
-    }
     ballOutRef.current = false; // ✅ Reset flag
   };
 
@@ -1598,23 +1546,27 @@ export default function PongGame() {
               </div>
             )}
 
-            {aiPaddleEmote && (
-              <div
-                className="paddle-emote ai-emote"
-                style={{ left: aiPaddleX + paddleWidth / 2, top: Math.max(18, aiPaddleY - 20) }}
-              >
-                {aiPaddleEmote}
-              </div>
-            )}
+            <div
+              className="paddle-avatar-tag ai-avatar-tag"
+              style={{ left: aiPaddleX + paddleWidth + 12, top: aiPaddleY + paddleHeight / 2 }}
+            >
+              {aiAvatarUrl ? (
+                <img src={aiAvatarUrl} alt={`Avatar ${aiName}`} className="paddle-avatar-image" />
+              ) : (
+                <span className="paddle-avatar-fallback">{aiFallbackInitial}</span>
+              )}
+            </div>
 
-            {playerPaddleEmote && (
-              <div
-                className="paddle-emote player-emote"
-                style={{ left: playerPaddleX + paddleWidth / 2, top: Math.max(18, playerPaddleY - 20) }}
-              >
-                {playerPaddleEmote}
-              </div>
-            )}
+            <div
+              className="paddle-avatar-tag player-avatar-tag"
+              style={{ left: playerPaddleX - 12, top: playerPaddleY + paddleHeight / 2 }}
+            >
+              {playerAvatarUrl ? (
+                <img src={playerAvatarUrl} alt={`Avatar ${playerName}`} className="paddle-avatar-image" />
+              ) : (
+                <span className="paddle-avatar-fallback">{playerFallbackInitial}</span>
+              )}
+            </div>
 
             {showLoseCelebration && (
               <div className="lose-celebration-overlay" onClick={() => setShowLoseCelebration(false)}>
