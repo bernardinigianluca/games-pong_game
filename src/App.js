@@ -102,6 +102,9 @@ export default function PongGame() {
   const [crowdVolume, setCrowdVolume] = useState(0.85);
   const [backgroundTracks, setBackgroundTracks] = useState([]);
   const [selectedTrackFile, setSelectedTrackFile] = useState('');
+  const [avatarOptions, setAvatarOptions] = useState([]);
+  const [playerAvatarFile, setPlayerAvatarFile] = useState('');
+  const [aiAvatarFile, setAiAvatarFile] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   const [gameActive, setGameActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -141,6 +144,10 @@ export default function PongGame() {
   const scorePopTimeoutRef = useRef(null);
   const bgMusicRef = useRef(null);
   const selectedTrackRef = useRef(selectedTrackFile);
+  const playerAvatarLabel =
+    avatarOptions.find((avatar) => avatar.file === playerAvatarFile)?.label || 'Nessun avatar';
+  const aiAvatarLabel =
+    avatarOptions.find((avatar) => avatar.file === aiAvatarFile)?.label || 'Nessun avatar';
   const selectedTrackLabel =
     backgroundTracks.find((track) => track.file === selectedTrackFile)?.label || selectedTrackFile;
   const aiSettings = DIFFICULTY_PRESETS[difficulty];
@@ -199,19 +206,55 @@ export default function PongGame() {
     }
   }, []);
 
+  const refreshAvatarOptions = useCallback(async () => {
+    try {
+      const response = await fetch(`/avatars/manifest.json?ts=${Date.now()}`);
+      if (!response.ok) return;
+      const avatars = await response.json();
+      if (!Array.isArray(avatars)) return;
+
+      const normalizedAvatars = avatars
+        .filter((avatar) => avatar && typeof avatar.file === 'string')
+        .map((avatar) => ({
+          file: avatar.file,
+          label: typeof avatar.label === 'string' && avatar.label.trim()
+            ? avatar.label
+            : avatar.file.replace(/\.[^.]+$/, ''),
+        }));
+
+      setAvatarOptions(normalizedAvatars);
+      setPlayerAvatarFile((prev) => {
+        if (prev && normalizedAvatars.some((avatar) => avatar.file === prev)) {
+          return prev;
+        }
+        return '';
+      });
+      setAiAvatarFile((prev) => {
+        if (prev && normalizedAvatars.some((avatar) => avatar.file === prev)) {
+          return prev;
+        }
+        return '';
+      });
+    } catch (e) {
+      console.log('Manifest avatar non disponibile');
+    }
+  }, []);
+
   const handlePickRandomTrack = useCallback(() => {
     setSelectedTrackFile((prev) => pickRandomTrackFromList(backgroundTracks, prev));
   }, [backgroundTracks]);
 
   useEffect(() => {
     refreshBackgroundTracks();
-  }, [refreshBackgroundTracks]);
+    refreshAvatarOptions();
+  }, [refreshBackgroundTracks, refreshAvatarOptions]);
 
   useEffect(() => {
     if (isSettingsOpen) {
       refreshBackgroundTracks();
+      refreshAvatarOptions();
     }
-  }, [isSettingsOpen, refreshBackgroundTracks]);
+  }, [isSettingsOpen, refreshBackgroundTracks, refreshAvatarOptions]);
 
   const playSound = useCallback((
     frequency,
@@ -1301,6 +1344,7 @@ export default function PongGame() {
     setScorePopSide(null);
     setSpeedMultiplier(1);
     refreshBackgroundTracks();
+    refreshAvatarOptions();
     aiDecisionTimeRef.current = 0;
     aiTargetYOffsetRef.current = 0;
     aiTargetXOffsetRef.current = 0;
@@ -1343,6 +1387,11 @@ export default function PongGame() {
             ? 'Hai il servizio: SPAZIO/INVIO normale | S effetto | A ace'
             : 'Usa frecce su/giu e sinistra/destra per muoverti';
 
+  const playerAvatarUrl = playerAvatarFile ? `/avatars/${encodeURIComponent(playerAvatarFile)}` : '';
+  const aiAvatarUrl = aiAvatarFile ? `/avatars/${encodeURIComponent(aiAvatarFile)}` : '';
+  const playerFallbackInitial = (playerName || 'P').trim().charAt(0).toUpperCase() || 'P';
+  const aiFallbackInitial = (aiName || 'A').trim().charAt(0).toUpperCase() || 'A';
+
   return (
     <div className={`game-container ${gamePhase} ${hideCursor ? 'hide-cursor' : ''}`}>
       <header className="game-header">
@@ -1354,11 +1403,25 @@ export default function PongGame() {
           <div className="court-topbar">
             <div className="score-board">
               <div className={`score-section ${scorePopSide === 'left' ? 'is-score-pop' : ''}`}>
+                <div className="score-avatar" aria-label={`Avatar ${aiName}`}>
+                  {aiAvatarUrl ? (
+                    <img src={aiAvatarUrl} alt={`Avatar ${aiName}`} className="score-avatar-image" />
+                  ) : (
+                    <span className="score-avatar-fallback">{aiFallbackInitial}</span>
+                  )}
+                </div>
                 <p className="score-label">{aiName}</p>
                 <p className="score-value">{aiScore}</p>
               </div>
               <div className="score-divider">vs</div>
               <div className={`score-section ${scorePopSide === 'right' ? 'is-score-pop' : ''}`}>
+                <div className="score-avatar" aria-label={`Avatar ${playerName}`}>
+                  {playerAvatarUrl ? (
+                    <img src={playerAvatarUrl} alt={`Avatar ${playerName}`} className="score-avatar-image" />
+                  ) : (
+                    <span className="score-avatar-fallback">{playerFallbackInitial}</span>
+                  )}
+                </div>
                 <p className="score-label">{playerName}</p>
                 <p className="score-value">{playerScore}</p>
               </div>
@@ -1528,6 +1591,36 @@ export default function PongGame() {
                 placeholder="Nome AI"
               />
 
+              <label htmlFor="player-avatar">Avatar Giocatore</label>
+              <select
+                id="player-avatar"
+                value={playerAvatarFile}
+                onChange={(e) => setPlayerAvatarFile(e.target.value)}
+                className="difficulty-select"
+              >
+                <option value="">Nessun avatar</option>
+                {avatarOptions.map((avatar) => (
+                  <option key={avatar.file} value={avatar.file}>
+                    {avatar.label}
+                  </option>
+                ))}
+              </select>
+
+              <label htmlFor="ai-avatar">Avatar AI</label>
+              <select
+                id="ai-avatar"
+                value={aiAvatarFile}
+                onChange={(e) => setAiAvatarFile(e.target.value)}
+                className="difficulty-select"
+              >
+                <option value="">Nessun avatar</option>
+                {avatarOptions.map((avatar) => (
+                  <option key={avatar.file} value={avatar.file}>
+                    {avatar.label}
+                  </option>
+                ))}
+              </select>
+
               <label htmlFor="speed">Velocità Pallina: {speedMultiplier.toFixed(1)}x</label>
               <input
                 id="speed"
@@ -1643,6 +1736,8 @@ export default function PongGame() {
               <p>🔊 Audio eventi: countdown, pubblico, vittoria, punto perso</p>
               <p>🎚️ Mixer audio: generale, effetti e pubblico</p>
               <p>🎵 Brano corrente: {selectedTrackLabel}</p>
+              <p>🖼️ Avatar Player: {playerAvatarLabel}</p>
+              <p>🤖 Avatar AI: {aiAvatarLabel}</p>
               <p>📊 Usa il cursore per controllare la velocità della pallina</p>
             </div>
 
