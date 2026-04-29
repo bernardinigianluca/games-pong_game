@@ -46,6 +46,16 @@ const pickRandomBackgroundTrack = () => {
   return BACKGROUND_TRACKS[randomIndex].file;
 };
 
+const pickDifferentBackgroundTrack = (currentTrackFile) => {
+  if (BACKGROUND_TRACKS.length <= 1) return currentTrackFile;
+  let nextTrackFile = currentTrackFile;
+  while (nextTrackFile === currentTrackFile) {
+    const randomIndex = Math.floor(Math.random() * BACKGROUND_TRACKS.length);
+    nextTrackFile = BACKGROUND_TRACKS[randomIndex].file;
+  }
+  return nextTrackFile;
+};
+
 export default function PongGame() {
   const ballSize = 10;
   const paddleWidth = 10;
@@ -170,6 +180,10 @@ export default function PongGame() {
     crowdVolumeRef.current = crowdVolume;
     isMutedRef.current = isMuted;
   }, [masterVolume, effectsVolume, crowdVolume, isMuted]);
+
+  const handlePickRandomTrack = useCallback(() => {
+    setSelectedTrackFile((prev) => pickDifferentBackgroundTrack(prev));
+  }, []);
 
   const playSound = useCallback((
     frequency,
@@ -1578,6 +1592,10 @@ export default function PongGame() {
                     </option>
                   ))}
                 </select>
+
+                <button onClick={handlePickRandomTrack} className="audio-toggle-btn">
+                  Traccia casuale
+                </button>
               </div>
             </div>
 
